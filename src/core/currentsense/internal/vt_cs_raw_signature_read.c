@@ -36,9 +36,9 @@ static VT_BOOL cs_downsample_half_adc_buffer(
 
         raw_signature_buffer->current_measured[samples_stored] =
             ((cs_object_reference->raw_signatures_reader->adc_read_buffer[iter] *
-                 *(cs_object_reference->sensor_handle->adc_ref_volt) * VOLT_TO_MILLIVOLT) /
-                (VT_FLOAT)pow(2, *(cs_object_reference->sensor_handle->adc_resolution))) *
-            (*(cs_object_reference->sensor_handle->currentsense_mV_to_mA));
+                 cs_object_reference->sensor_handle->currentsense_adc_ref_volt * VOLT_TO_MILLIVOLT) /
+                (VT_FLOAT)pow(2, cs_object_reference->sensor_handle->currentsense_adc_resolution)) *
+            (cs_object_reference->sensor_handle->currentsense_mV_to_mA);
 
         samples_stored++;
         if (samples_stored == raw_signature_buffer->sample_length)
@@ -163,6 +163,7 @@ static VT_VOID cs_raw_signature_read_full_complete_callback()
         cs_object_reference->raw_signatures_reader->adc_read_buffer,
         VT_CS_SAMPLE_LENGTH,
         cs_object_reference->raw_signatures_reader->adc_read_sampling_frequency,
+        &cs_object_reference->raw_signatures_reader->adc_read_sampling_frequency,
         &cs_raw_signature_read_half_complete_callback,
         &cs_raw_signature_read_full_complete_callback);
 
@@ -301,6 +302,7 @@ VT_UINT cs_raw_signature_read(VT_CURRENTSENSE_OBJECT* cs_object,
         cs_object_reference->raw_signatures_reader->adc_read_buffer,
         VT_CS_SAMPLE_LENGTH,
         cs_object_reference->raw_signatures_reader->adc_read_sampling_frequency,
+        &cs_object_reference->raw_signatures_reader->adc_read_sampling_frequency,
         &cs_raw_signature_read_half_complete_callback,
         &cs_raw_signature_read_full_complete_callback);
 

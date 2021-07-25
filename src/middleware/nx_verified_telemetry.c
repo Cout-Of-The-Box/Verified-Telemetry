@@ -387,7 +387,7 @@ UINT nx_vt_signature_init(NX_VERIFIED_TELEMETRY_DB* verified_telemetry_DB,
     bool telemetry_status_auto_update,
     VT_SENSOR_HANDLE* sensor_handle)
 {
-    if (signature_type != VT_SIGNATURE_TYPE_FALLCURVE)
+    if (signature_type != VT_SIGNATURE_TYPE_FALLCURVE && signature_type != VT_SIGNATURE_TYPE_CURRENTSENSE)
     {
         return NX_AZURE_IOT_FAILURE;
     }

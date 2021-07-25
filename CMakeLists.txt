@@ -73,7 +73,7 @@ add_library(${TARGET}
   ${VT_SOURCES}
 )
 
-add_library(az:iot:vt ALIAS verified_telemetry)
+add_library(az::iot::vt ALIAS verified_telemetry)
 
 target_link_libraries(${TARGET} 
   PUBLIC 
