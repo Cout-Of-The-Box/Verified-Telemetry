@@ -5,6 +5,7 @@
 #include "vt_cs_raw_signature_read.h"
 #include "vt_cs_sensor_status.h"
 #include "vt_cs_signature_features.h"
+#include <math.h>
 
 static VT_VOID cs_sensor_status_with_non_repeating_signature_template(VT_CURRENTSENSE_OBJECT* cs_object)
 {
@@ -78,19 +79,21 @@ static VT_VOID cs_sensor_status_with_repeating_signature_template(VT_CURRENTSENS
     VT_UINT signatures_evaluated                  = 0;
     VT_BOOL signature_feature_vector_compute_fail = false;
     VT_BOOL signature_offset_current_compute_fail = false;
+ 
 
     if (cs_fetch_template_repeating_signature_offset_current(cs_object, &lowest_sample_freq_saved, &offset_current_saved))
     {
         offset_current_unavailable = true;
     }
     if (!offset_current_unavailable)
+            
     {
         if (cs_repeating_raw_signature_fetch_stored_current_measurement(
                 cs_object, raw_signature, lowest_sample_freq_saved, VT_CS_SAMPLE_LENGTH) == VT_SUCCESS)
         {
             if (cs_repeating_signature_offset_current_compute(cs_object, raw_signature, VT_CS_SAMPLE_LENGTH, &offset_current) ==
                 VT_SUCCESS)
-            {
+            { 
                 offset_current_drift = cs_repeating_signature_offset_current_evaluate(offset_current, offset_current_saved);
             }
             else
@@ -122,7 +125,18 @@ static VT_VOID cs_sensor_status_with_repeating_signature_template(VT_CURRENTSENS
             signature_feature_vector_compute_fail = true;
             break;
         }
+       
 
+       
+// for (VT_INT iter1 = 0; iter1 < VT_CS_SAMPLE_LENGTH; iter1++)
+//     {
+//         decimal    = raw_signature[iter1];
+//         frac_float = raw_signature[iter1] - (VT_FLOAT)decimal;
+//         frac       = fabsf(frac_float) * 10000;
+//         printf("%d.%04d, ", decimal, frac);
+//     }
+// printf("\n");
+    
         if (cs_repeating_signature_feature_vector_compute(cs_object,
                 raw_signature,
                 VT_CS_SAMPLE_LENGTH,
@@ -195,7 +209,7 @@ static VT_VOID cs_sensor_status_with_repeating_signature_template(VT_CURRENTSENS
 VT_VOID cs_sensor_status(VT_CURRENTSENSE_OBJECT* cs_object)
 {
     if (cs_object->fingerprintdb.template_type == VT_CS_NON_REPEATING_SIGNATURE)
-    {
+    {   
         cs_sensor_status_with_non_repeating_signature_template(cs_object);
     }
     else

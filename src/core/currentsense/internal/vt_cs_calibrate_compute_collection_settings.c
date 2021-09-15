@@ -258,14 +258,15 @@ static VT_FLOAT get_raw_signature_sample_freq(VT_FLOAT signal_freq)
     return sample_freq;
 }
 
+
 VT_VOID cs_calibrate_repeating_signatures_compute_sampling_frequencies(VT_CURRENTSENSE_OBJECT* cs_object,
     VT_FLOAT* sampling_frequencies,
     VT_UINT sampling_frequencies_buffer_length,
     VT_UINT* num_sampling_frequencies)
 {
-    VT_UINT8 fft_ranges       = calculate_fft_ranges();
+    VT_UINT8 fft_ranges       =   calculate_fft_ranges();
     *num_sampling_frequencies = 0;
-    for (VT_UINT iter = 0; iter < fft_ranges; iter++)
+    for (VT_UINT iter = 0; iter < fft_ranges ; iter++)
     {
         if (iter == sampling_frequencies_buffer_length)
         {

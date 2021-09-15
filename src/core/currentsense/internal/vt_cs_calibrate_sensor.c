@@ -8,11 +8,15 @@
 #include "vt_debug.h"
 #include <math.h>
 
+
+
 static VT_UINT cs_calibrate_repeating_signature_template(VT_CURRENTSENSE_OBJECT* cs_object)
 {
     VT_FLOAT raw_signature[VT_CS_SAMPLE_LENGTH]            = {0};
     VT_FLOAT top_N_frequencies[VT_CS_MAX_TEST_FREQUENCIES] = {0};
     VT_FLOAT lowest_sample_freq                            = VT_CS_ADC_MAX_SAMPLING_FREQ;
+    VT_FLOAT valid_lowest_frequency =VT_CS_ADC_MAX_SAMPLING_FREQ;
+
     cs_calibrate_repeating_signatures_compute_collection_settings(cs_object, top_N_frequencies, &lowest_sample_freq);
 
     VT_UINT8 characteristic_frequencies_found = 0;
@@ -21,8 +25,30 @@ static VT_UINT cs_calibrate_repeating_signature_template(VT_CURRENTSENSE_OBJECT*
     VT_FLOAT duty_cycle;
     VT_FLOAT offset_current;
 
+    // VT_INT decimal;
+    // VT_FLOAT frac_float;
+    // VT_INT frac;
+
+
+    VT_FLOAT min_ref_freq=VT_CS_ADC_MAX_SAMPLING_FREQ;
+
+
+
+    for (VT_UINT iter1 = 0; iter1 < cs_object->raw_signatures_reader->num_repeating_raw_signatures; iter1++){
+        //         decimal    = cs_object->raw_signatures_reader->repeating_raw_signatures[iter1].sampling_frequency;
+        // frac_float = cs_object->raw_signatures_reader->repeating_raw_signatures[iter1].sampling_frequency - (VT_FLOAT)decimal;
+        // frac       = fabsf(frac_float) * 10000;
+
+
+        
+        if (cs_object->raw_signatures_reader->repeating_raw_signatures[iter1].sampling_frequency < min_ref_freq){
+            min_ref_freq=cs_object->raw_signatures_reader->repeating_raw_signatures[iter1].sampling_frequency;
+        }
+    }
+
+
     for (VT_UINT iter = 0; iter < VT_CS_MAX_TEST_FREQUENCIES; iter++)
-    {
+    { 
         if (characteristic_frequencies_found == VT_CS_MAX_SIGNATURES)
         {
             break;
@@ -33,6 +59,8 @@ static VT_UINT cs_calibrate_repeating_signature_template(VT_CURRENTSENSE_OBJECT*
             continue;
         }
 
+
+
         if (cs_repeating_raw_signature_fetch_extrapolated_current_measurement_for_calibration(
                 cs_object, raw_signature, top_N_frequencies[iter], VT_CS_SAMPLE_LENGTH))
         {
@@ -40,6 +68,7 @@ static VT_UINT cs_calibrate_repeating_signature_template(VT_CURRENTSENSE_OBJECT*
             continue;
         }
 
+        
         if (cs_repeating_signature_feature_vector_compute(cs_object,
                 raw_signature,
                 VT_CS_SAMPLE_LENGTH,
@@ -64,14 +93,25 @@ static VT_UINT cs_calibrate_repeating_signature_template(VT_CURRENTSENSE_OBJECT*
             VTLogDebug("Error in storing feature vector! \r\n");
             break;
         }
+        if (top_N_frequencies[iter]<valid_lowest_frequency){
+            valid_lowest_frequency=top_N_frequencies[iter];
+        }
         VTLogDebug("Feature vector stored successfully! \r\n");
         characteristic_frequencies_found++;
     }
+    
+    
+
 
     if (characteristic_frequencies_found == 0)
     {
         return VT_ERROR;
     }
+
+    if (lowest_sample_freq<min_ref_freq){
+        lowest_sample_freq=valid_lowest_frequency;
+    }
+
 
     if (cs_repeating_raw_signature_fetch_extrapolated_current_measurement_for_calibration(
             cs_object, raw_signature, lowest_sample_freq, VT_CS_SAMPLE_LENGTH))
@@ -117,12 +157,13 @@ static VT_UINT cs_recalibrate_repeating_signature_template(VT_CURRENTSENSE_OBJEC
             continue;
         }
 
+        
         if (cs_repeating_raw_signature_fetch_extrapolated_current_measurement_for_calibration(
                 cs_object, raw_signature, top_N_frequencies[iter], VT_CS_SAMPLE_LENGTH))
         {
             continue;
         }
-
+        
         if (cs_repeating_signature_feature_vector_compute(cs_object,
                 raw_signature,
                 VT_CS_SAMPLE_LENGTH,
@@ -143,11 +184,14 @@ static VT_UINT cs_recalibrate_repeating_signature_template(VT_CURRENTSENSE_OBJEC
         characteristic_frequencies_found++;
     }
 
+    
+
     if (characteristic_frequencies_found == 0)
     {
         return VT_ERROR;
     }
 
+    
     if (cs_repeating_raw_signature_fetch_extrapolated_current_measurement_for_calibration(
             cs_object, raw_signature, lowest_sample_freq, VT_CS_SAMPLE_LENGTH))
     {
@@ -173,9 +217,25 @@ static VT_UINT cs_calibrate_non_repeating_signature_template(VT_CURRENTSENSE_OBJ
     VT_FLOAT avg_curr_on                        = 0;
     VT_FLOAT avg_curr_off                       = 0;
 
+#if VT_LOG_LEVEL > 2
+    VT_INT decimal;
+    VT_FLOAT frac_float;
+    VT_INT frac;
+#endif /* VT_LOG_LEVEL > 2 */
+
     if (cs_non_repeating_raw_signature_fetch_stored_current_measurement(
             cs_object, raw_signature, &sampling_frequency, &num_datapoints) == VT_SUCCESS)
     {
+    VTLogDebug("non repeating Raw: \r\n");
+
+            for (VT_INT iter = 0; iter < VT_CS_SAMPLE_LENGTH ; iter++)
+            {
+                decimal    = raw_signature[iter];
+                frac_float = raw_signature[iter] - (VT_FLOAT)decimal;
+                frac       = fabsf(frac_float) * 10000;
+                VTLogDebugNoTag("%d.%04d, ", decimal, frac);
+            }
+
         if (cs_non_repeating_signature_average_current_compute(
                 cs_object, raw_signature, num_datapoints, &avg_curr_on, &avg_curr_off))
         {
